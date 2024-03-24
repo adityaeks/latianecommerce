@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use File;
 
 class ProfileController extends Controller
 {
@@ -21,8 +22,11 @@ class ProfileController extends Controller
             'image' => ['image', 'max:2048']
         ]);
         $user = Auth::user();
-        
+
         if($request->hasFile('image')){
+            if(File::exists(public_path($user->image))){
+                File::delete(public_path($user->image));
+            }
             $image = $request->image;
             $imageName = rand().'_'.$image->getClientOriginalName();
             $image->move(public_path('uploads'), $imageName);
@@ -37,6 +41,22 @@ class ProfileController extends Controller
         $user->email =$request->email;
         $user->save();
 
+        toastr()->success('Profile Updated Succesfully');
+        return redirect()->back();
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'confirmed', 'min:8']
+        ]);
+
+        $request->user()->update([
+            'password' => bcrypt($request->password)
+        ]);
+
+        toastr()->success('Password Updated Succesfully');
         return redirect()->back();
     }
 }
